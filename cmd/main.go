@@ -9,32 +9,34 @@ import (
 
 func main() {
 	start := time.Now()
-
-	var priceOne, priceTwo, priceThree float64
+	priceChannel := make(chan float64)
 
 	var wg sync.WaitGroup
 	wg.Add(3)
 
 	go func() {
-		defer wg.Done()
-		priceOne = fetcher.FetchPriceFomSiteOne()
+		for price := range priceChannel {
+			fmt.Printf("price received: R$ %.2f \n", price)
+		}
 	}()
 
 	go func() {
 		defer wg.Done()
-		priceTwo = fetcher.FetchPriceFomSiteTwo()
+		priceChannel <- fetcher.FetchPriceFomSiteOne()
 	}()
 
 	go func() {
 		defer wg.Done()
-		priceThree = fetcher.FetchPriceFomSiteThree()
+		priceChannel <- fetcher.FetchPriceFomSiteTwo()
+	}()
+
+	go func() {
+		defer wg.Done()
+		priceChannel <- fetcher.FetchPriceFomSiteThree()
 	}()
 
 	wg.Wait()
-
-	fmt.Printf("R$ %.2f \n", priceOne)
-	fmt.Printf("R$ %.2f \n", priceTwo)
-	fmt.Printf("R$ %.2f \n", priceThree)
+	close(priceChannel)
 
 	fmt.Printf("\n time: %s", time.Since(start))
 }
